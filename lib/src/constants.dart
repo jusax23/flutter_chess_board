@@ -2,6 +2,7 @@ const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
 /// Enum which stores board types
 enum BoardColor {
+  brownSvg,
   brown,
   darkBrown,
   orange,

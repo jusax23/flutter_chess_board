@@ -1,8 +1,9 @@
-import 'dart:math';
-
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:chess/chess.dart' hide State;
+import 'package:flutter_chess_board/src/board_mark.dart';
+import 'package:flutter_svg/svg.dart';
 import 'board_arrow.dart';
 import 'chess_board_controller.dart';
 import 'constants.dart';
@@ -24,8 +25,10 @@ class ChessBoard extends StatefulWidget {
   final PlayerColor boardOrientation;
 
   final VoidCallback? onMove;
+  final void Function(String square)? onMark;
 
   final List<BoardArrow> arrows;
+  final Map<String, BoardMark> marks;
 
   const ChessBoard({
     Key? key,
@@ -35,7 +38,9 @@ class ChessBoard extends StatefulWidget {
     this.boardColor = BoardColor.brown,
     this.boardOrientation = PlayerColor.white,
     this.onMove,
+    this.onMark,
     this.arrows = const [],
+    this.marks = const {},
   }) : super(key: key);
 
   @override
@@ -57,6 +62,38 @@ class _ChessBoardState extends State<ChessBoard> {
                 child: _getBoardImage(widget.boardColor),
                 aspectRatio: 1.0,
               ),
+              if (widget.marks.isNotEmpty)
+                IgnorePointer(
+                    child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 8),
+                    itemBuilder: (context, index) {
+                      var row = index ~/ 8;
+                      var column = index % 8;
+                      var boardRank =
+                          widget.boardOrientation == PlayerColor.black
+                              ? '${row + 1}'
+                              : '${(7 - row) + 1}';
+                      var boardFile =
+                          widget.boardOrientation == PlayerColor.white
+                              ? '${files[column]}'
+                              : '${files[7 - column]}';
+
+                      var squareName = '$boardFile$boardRank';
+                      var mark = widget.marks[squareName];
+                      return mark != null
+                          ? Container(
+                              color: mark.color,
+                            )
+                          : Container();
+                    },
+                    itemCount: 64,
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                  ),
+                )),
               AspectRatio(
                 aspectRatio: 1.0,
                 child: GridView.builder(
@@ -82,8 +119,15 @@ class _ChessBoardState extends State<ChessBoard> {
 
                     var draggable = game.get(squareName) != null
                         ? Draggable<PieceMoveData>(
+                            onDragStarted: () {},
                             child: piece,
-                            feedback: piece,
+                            feedback: Container(
+                              child: piece,
+                              height:
+                                  widget.size != null ? widget.size! / 8 : null,
+                              width:
+                                  widget.size != null ? widget.size! / 8 : null,
+                            ),
                             childWhenDragging: SizedBox(),
                             data: PieceMoveData(
                               squareName: squareName,
@@ -92,7 +136,9 @@ class _ChessBoardState extends State<ChessBoard> {
                               pieceColor: pieceOnSquare?.color ?? Color.WHITE,
                             ),
                           )
-                        : Container();
+                        : Container(
+                            decoration: BoxDecoration(),
+                          );
 
                     var dragTarget =
                         DragTarget<PieceMoveData>(builder: (context, list, _) {
@@ -132,7 +178,20 @@ class _ChessBoardState extends State<ChessBoard> {
                       }
                     });
 
-                    return dragTarget;
+                    return GestureDetector(
+                        onTap: () {
+                          //print("tapped: $squareName");
+                        },
+                        onSecondaryTap: () {
+                          widget.onMark?.call(squareName);
+                        },
+                        onLongPress: () {
+                          widget.onMark?.call(squareName);
+                        },
+                        onSecondaryLongPressMoveUpdate: (details) {
+                          //print("pan: ${details.offsetFromOrigin}");
+                        },
+                        child: dragTarget);
                   },
                   itemCount: 64,
                   shrinkWrap: true,
@@ -158,8 +217,14 @@ class _ChessBoardState extends State<ChessBoard> {
   }
 
   /// Returns the board image
-  Image _getBoardImage(BoardColor color) {
+  Widget _getBoardImage(BoardColor color) {
     switch (color) {
+      case BoardColor.brownSvg:
+        return SvgPicture.asset(
+          "images/brown_board.svg",
+          package: 'flutter_chess_board',
+          fit: BoxFit.cover,
+        );
       case BoardColor.brown:
         return Image.asset(
           "images/brown_board.png",
