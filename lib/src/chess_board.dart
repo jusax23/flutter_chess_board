@@ -352,36 +352,24 @@ class _ArrowPainter extends CustomPainter {
           ((effectiveColumnEnd + 1) * blockSize) - halfBlockSize,
           ((effectiveRowEnd + 1) * blockSize) - halfBlockSize);
 
-      var dist = Offset(
-          (endOffset.dx - startOffset.dx), (endOffset.dy - startOffset.dy));
+      var dist = endOffset - startOffset;
       var len = dist.distance;
-      var dir = Offset(dist.dx / len, dist.dy / len);
+      var dir = dist / len;
       var normal = Offset(-dir.dy, dir.dx);
 
       var paint = Paint()
         ..strokeWidth = halfBlockSize * arrow.width
         ..color = arrow.color;
 
-      canvas.drawLine(
-          startOffset,
-          Offset(endOffset.dx - dir.dx * halfBlockSize,
-              endOffset.dy - dir.dy * halfBlockSize),
-          paint);
+      canvas.drawLine(startOffset + (dir * halfBlockSize * 0.5),
+          endOffset - (dir * halfBlockSize), paint);
 
-      var newPoint1 = Offset(
-          endOffset.dx -
-              dir.dx * halfBlockSize -
-              normal.dx * halfBlockSize * arrow.width,
-          endOffset.dy -
-              dir.dy * halfBlockSize -
-              normal.dy * halfBlockSize * arrow.width);
-      var newPoint2 = Offset(
-          endOffset.dx -
-              dir.dx * halfBlockSize +
-              normal.dx * halfBlockSize * arrow.width,
-          endOffset.dy -
-              dir.dy * halfBlockSize +
-              normal.dy * halfBlockSize * arrow.width);
+      var newPoint1 = endOffset -
+          (dir * halfBlockSize) -
+          (normal * halfBlockSize * arrow.width);
+      var newPoint2 = endOffset -
+          (dir * halfBlockSize) +
+          (normal * halfBlockSize * arrow.width);
 
       var path = Path();
 
