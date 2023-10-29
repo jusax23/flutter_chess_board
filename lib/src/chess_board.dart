@@ -352,27 +352,36 @@ class _ArrowPainter extends CustomPainter {
           ((effectiveColumnEnd + 1) * blockSize) - halfBlockSize,
           ((effectiveRowEnd + 1) * blockSize) - halfBlockSize);
 
-      var yDist = 0.8 * (endOffset.dy - startOffset.dy);
-      var xDist = 0.8 * (endOffset.dx - startOffset.dx);
+      var dist = Offset(
+          (endOffset.dx - startOffset.dx), (endOffset.dy - startOffset.dy));
+      var len = dist.distance;
+      var dir = Offset(dist.dx / len, dist.dy / len);
+      var normal = Offset(-dir.dy, dir.dx);
 
       var paint = Paint()
-        ..strokeWidth = halfBlockSize * 0.8
+        ..strokeWidth = halfBlockSize * arrow.width
         ..color = arrow.color;
 
-      canvas.drawLine(startOffset,
-          Offset(startOffset.dx + xDist, startOffset.dy + yDist), paint);
+      canvas.drawLine(
+          startOffset,
+          Offset(endOffset.dx - dir.dx * halfBlockSize,
+              endOffset.dy - dir.dy * halfBlockSize),
+          paint);
 
-      var slope =
-          (endOffset.dy - startOffset.dy) / (endOffset.dx - startOffset.dx);
-
-      var newLineSlope = -1 / slope;
-
-      var points = _getNewPoints(
-          Offset(startOffset.dx + xDist, startOffset.dy + yDist),
-          newLineSlope,
-          halfBlockSize);
-      var newPoint1 = points[0];
-      var newPoint2 = points[1];
+      var newPoint1 = Offset(
+          endOffset.dx -
+              dir.dx * halfBlockSize -
+              normal.dx * halfBlockSize * arrow.width,
+          endOffset.dy -
+              dir.dy * halfBlockSize -
+              normal.dy * halfBlockSize * arrow.width);
+      var newPoint2 = Offset(
+          endOffset.dx -
+              dir.dx * halfBlockSize +
+              normal.dx * halfBlockSize * arrow.width,
+          endOffset.dy -
+              dir.dy * halfBlockSize +
+              normal.dy * halfBlockSize * arrow.width);
 
       var path = Path();
 
@@ -383,22 +392,6 @@ class _ArrowPainter extends CustomPainter {
 
       canvas.drawPath(path, paint);
     }
-  }
-
-  List<Offset> _getNewPoints(Offset start, double slope, double length) {
-    if (slope == double.infinity || slope == double.negativeInfinity) {
-      return [
-        Offset(start.dx, start.dy + length),
-        Offset(start.dx, start.dy - length)
-      ];
-    }
-
-    return [
-      Offset(start.dx + (length / sqrt(1 + (slope * slope))),
-          start.dy + ((length * slope) / sqrt(1 + (slope * slope)))),
-      Offset(start.dx - (length / sqrt(1 + (slope * slope))),
-          start.dy - ((length * slope) / sqrt(1 + (slope * slope)))),
-    ];
   }
 
   @override
