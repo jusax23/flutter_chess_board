@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:chess/chess.dart' hide State;
 import 'package:flutter_chess_board/src/board_mark.dart';
+import 'package:flutter_chess_board/src/symbols.dart';
 import 'package:flutter_svg/svg.dart';
 import 'board_arrow.dart';
 import 'chess_board_controller.dart';
@@ -117,10 +118,36 @@ class _ChessBoardState extends State<ChessBoard> {
                       game: game,
                     );
 
+                    var mate = pieceOnSquare?.type == PieceType.KING &&
+                        game.in_checkmate &&
+                        game.king_attacked(pieceOnSquare!.color);
+
+                    var stalemate = pieceOnSquare?.type == PieceType.KING &&
+                        game.in_stalemate;
+                    var insufficientMaterial =
+                        pieceOnSquare?.type == PieceType.KING &&
+                            game.insufficient_material;
+                    var threefoldRepetition =
+                        pieceOnSquare?.type == PieceType.KING &&
+                            game.in_threefold_repetition;
+
                     var draggable = game.get(squareName) != null
                         ? Draggable<PieceMoveData>(
                             onDragStarted: () {},
-                            child: piece,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                piece,
+                                if (mate)
+                                  mateSymbol()
+                                else if (stalemate)
+                                  drawSymbol()
+                                else if (insufficientMaterial)
+                                  insufficientMaterialSymbol()
+                                else if (threefoldRepetition)
+                                  threefoldRepetitionSymbol()
+                              ],
+                            ),
                             feedback: Container(
                               child: piece,
                               height:
@@ -144,7 +171,11 @@ class _ChessBoardState extends State<ChessBoard> {
                         DragTarget<PieceMoveData>(builder: (context, list, _) {
                       return draggable;
                     }, onWillAccept: (pieceMoveData) {
-                      return widget.enableUserMoves ? true : false;
+                      return (widget.enableUserMoves ? true : false) &&
+                          !game.in_checkmate &&
+                          !stalemate &&
+                          !insufficientMaterial &&
+                          !threefoldRepetition;
                     }, onAccept: (PieceMoveData pieceMoveData) async {
                       // A way to check if move occurred.
                       Color moveColor = game.turn;
