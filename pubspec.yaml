@@ -30,6 +30,7 @@ flutter:
   #  - images/a_dot_ham.jpeg
   assets:
     - images/brown_board.svg
+    - images/green_board.svg
     - images/chess_board.png
     - images/brown_board.png
     - images/2.0x/brown_board.png

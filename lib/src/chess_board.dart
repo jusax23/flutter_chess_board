@@ -256,6 +256,12 @@ class _ChessBoardState extends State<ChessBoard> {
           package: 'flutter_chess_board',
           fit: BoxFit.cover,
         );
+      case BoardColor.greenSvg:
+        return SvgPicture.asset(
+          "images/green_board.svg",
+          package: 'flutter_chess_board',
+          fit: BoxFit.cover,
+        );
       case BoardColor.brown:
         return Image.asset(
           "images/brown_board.png",
