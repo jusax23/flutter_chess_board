@@ -1,7 +1,6 @@
 import 'package:chess_vectors_flutter/chess_vectors_flutter.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:chess/chess.dart' hide State;
+import 'package:chess/chess.dart' as chess hide State;
 import 'package:flutter_chess_board/src/board_mark.dart';
 import 'package:flutter_chess_board/src/symbols.dart';
 import 'package:flutter_svg/svg.dart';
@@ -31,6 +30,9 @@ class ChessBoard extends StatefulWidget {
   final List<BoardArrow> arrows;
   final Map<String, BoardMark> marks;
 
+  final Color lastFromColor;
+  final Color lastToColor;
+
   const ChessBoard({
     Key? key,
     required this.controller,
@@ -42,6 +44,8 @@ class ChessBoard extends StatefulWidget {
     this.onMark,
     this.arrows = const [],
     this.marks = const {},
+    this.lastFromColor = Colors.transparent,
+    this.lastToColor = Colors.transparent,
   }) : super(key: key);
 
   @override
@@ -51,7 +55,7 @@ class ChessBoard extends StatefulWidget {
 class _ChessBoardState extends State<ChessBoard> {
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<Chess>(
+    return ValueListenableBuilder<chess.Chess>(
       valueListenable: widget.controller,
       builder: (context, game, _) {
         return SizedBox(
@@ -113,40 +117,57 @@ class _ChessBoardState extends State<ChessBoard> {
                     var squareName = '$boardFile$boardRank';
                     var pieceOnSquare = game.get(squareName);
 
+                    var lastMove = game.history.lastOrNull;
+                    bool isLastFrom = lastMove != null
+                        ? lastMove.move.fromAlgebraic == squareName
+                        : false;
+                    bool isLastTo = lastMove != null
+                        ? lastMove.move.toAlgebraic == squareName
+                        : false;
+                    bool isLast = isLastFrom || isLastTo;
+
                     var piece = BoardPiece(
                       squareName: squareName,
                       game: game,
                     );
 
-                    var mate = pieceOnSquare?.type == PieceType.KING &&
+                    var mate = pieceOnSquare?.type == chess.PieceType.KING &&
                         game.in_checkmate &&
                         game.king_attacked(pieceOnSquare!.color);
 
-                    var stalemate = pieceOnSquare?.type == PieceType.KING &&
-                        game.in_stalemate;
+                    var stalemate =
+                        pieceOnSquare?.type == chess.PieceType.KING &&
+                            game.in_stalemate;
                     var insufficientMaterial =
-                        pieceOnSquare?.type == PieceType.KING &&
+                        pieceOnSquare?.type == chess.PieceType.KING &&
                             game.insufficient_material;
                     var threefoldRepetition =
-                        pieceOnSquare?.type == PieceType.KING &&
+                        pieceOnSquare?.type == chess.PieceType.KING &&
                             game.in_threefold_repetition;
 
                     var draggable = game.get(squareName) != null
                         ? Draggable<PieceMoveData>(
                             onDragStarted: () {},
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                piece,
-                                if (mate)
-                                  mateSymbol()
-                                else if (stalemate)
-                                  drawSymbol()
-                                else if (insufficientMaterial)
-                                  insufficientMaterialSymbol()
-                                else if (threefoldRepetition)
-                                  threefoldRepetitionSymbol()
-                              ],
+                            child: Container(
+                              color: isLastTo
+                                  ? widget.lastFromColor
+                                  : (isLastFrom
+                                      ? widget.lastToColor
+                                      : Colors.transparent),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  piece,
+                                  if (mate)
+                                    mateSymbol()
+                                  else if (stalemate)
+                                    drawSymbol()
+                                  else if (insufficientMaterial)
+                                    insufficientMaterialSymbol()
+                                  else if (threefoldRepetition)
+                                    threefoldRepetitionSymbol()
+                                ],
+                              ),
                             ),
                             feedback: Container(
                               child: piece,
@@ -160,11 +181,18 @@ class _ChessBoardState extends State<ChessBoard> {
                               squareName: squareName,
                               pieceType:
                                   pieceOnSquare?.type.toUpperCase() ?? 'P',
-                              pieceColor: pieceOnSquare?.color ?? Color.WHITE,
+                              pieceColor:
+                                  pieceOnSquare?.color ?? chess.Color.WHITE,
                             ),
                           )
                         : Container(
-                            decoration: BoxDecoration(),
+                            decoration: BoxDecoration(
+                              color: isLastTo
+                                  ? widget.lastFromColor
+                                  : (isLastFrom
+                                      ? widget.lastToColor
+                                      : Colors.transparent),
+                            ),
                           );
 
                     var dragTarget =
@@ -178,15 +206,17 @@ class _ChessBoardState extends State<ChessBoard> {
                           !threefoldRepetition;
                     }, onAccept: (PieceMoveData pieceMoveData) async {
                       // A way to check if move occurred.
-                      Color moveColor = game.turn;
+                      chess.Color moveColor = game.turn;
 
                       if (pieceMoveData.pieceType == "P" &&
                           ((pieceMoveData.squareName[1] == "7" &&
                                   squareName[1] == "8" &&
-                                  pieceMoveData.pieceColor == Color.WHITE) ||
+                                  pieceMoveData.pieceColor ==
+                                      chess.Color.WHITE) ||
                               (pieceMoveData.squareName[1] == "2" &&
                                   squareName[1] == "1" &&
-                                  pieceMoveData.pieceColor == Color.BLACK))) {
+                                  pieceMoveData.pieceColor ==
+                                      chess.Color.BLACK))) {
                         var val = await _promotionDialog(context);
 
                         if (val != null) {
@@ -336,7 +366,7 @@ class _ChessBoardState extends State<ChessBoard> {
 
 class BoardPiece extends StatelessWidget {
   final String squareName;
-  final Chess game;
+  final chess.Chess game;
 
   const BoardPiece({
     Key? key,
@@ -353,7 +383,7 @@ class BoardPiece extends StatelessWidget {
       return Container();
     }
 
-    String piece = (square?.color == Color.WHITE ? 'W' : 'B') +
+    String piece = (square?.color == chess.Color.WHITE ? 'W' : 'B') +
         (square?.type.toUpperCase() ?? 'P');
 
     switch (piece) {
@@ -404,7 +434,7 @@ class BoardPiece extends StatelessWidget {
 class PieceMoveData {
   final String squareName;
   final String pieceType;
-  final Color pieceColor;
+  final chess.Color pieceColor;
 
   PieceMoveData({
     required this.squareName,
