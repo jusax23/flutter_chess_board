@@ -124,7 +124,7 @@ class _ChessBoardState extends State<ChessBoard> {
                     bool isLastTo = lastMove != null
                         ? lastMove.move.toAlgebraic == squareName
                         : false;
-                    bool isLast = isLastFrom || isLastTo;
+                    //bool isLast = isLastFrom || isLastTo;
 
                     var piece = BoardPiece(
                       squareName: squareName,
@@ -144,6 +144,10 @@ class _ChessBoardState extends State<ChessBoard> {
                     var threefoldRepetition =
                         pieceOnSquare?.type == chess.PieceType.KING &&
                             game.in_threefold_repetition;
+
+                    var fiftyRulesDraw =
+                        pieceOnSquare?.type == chess.PieceType.KING &&
+                            game.half_moves >= 100;
 
                     var draggable = game.get(squareName) != null
                         ? Draggable<PieceMoveData>(
@@ -166,6 +170,8 @@ class _ChessBoardState extends State<ChessBoard> {
                                     insufficientMaterialSymbol()
                                   else if (threefoldRepetition)
                                     threefoldRepetitionSymbol()
+                                  else if (fiftyRulesDraw)
+                                    fiftyDrawSymbol()
                                 ],
                               ),
                             ),

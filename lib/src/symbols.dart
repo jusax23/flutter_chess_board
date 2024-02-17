@@ -95,3 +95,27 @@ Widget threefoldRepetitionSymbol() {
     ),
   );
 }
+
+Widget fiftyDrawSymbol() {
+  return Positioned(
+    top: -5,
+    right: 2,
+    child: Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: Text(
+          '5',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+      ),
+    ),
+  );
+}
